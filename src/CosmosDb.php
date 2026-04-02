@@ -5,13 +5,15 @@ namespace Jupitern\CosmosDb;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 use Psr\Http\Message\ResponseInterface;
+use GuzzleHttp\Client;
 
 class CosmosDb
 {
     private string $host;
     private string $private_key;
-    public array $httpClientOptions;
+    public array $httpClientOptions = [];
     private array $pkRanges = [];
+    private ?Client $httpClient = null;
 
     /**
      * __construct
@@ -34,6 +36,24 @@ class CosmosDb
     public function setHttpClientOptions(array $options = [])
     {
         $this->httpClientOptions = $options;
+    }
+
+
+    private function getHttpClient(): Client
+    {
+        if (is_null($this->httpClient)) {
+            $baseUri = rtrim($this->host, '/');
+
+            $this->httpClient = new Client(array_merge([
+                'base_uri'        => $baseUri,
+                'http_errors'     => true,     // keep current behavior (exceptions on 4xx/5xx)
+//                'timeout'         => 30.0,     // total request timeout
+                'connect_timeout' => 5.0,      // fail fast on connect issues
+                // 'headers' => ['Connection' => 'keep-alive'], // optional; HTTP/1.1 defaults to keep-alive
+            ], $this->httpClientOptions));
+        }
+
+        return $this->httpClient;
     }
 
     /**
@@ -81,24 +101,37 @@ class CosmosDb
      * @param string $path request path
      * @param string $method request method
      * @param array $headers request headers
-     * @param string $body request body (JSON or QUERY)
+     * @param string|null $body request body (JSON or QUERY)
      * @return ResponseInterface JSON response
      * @throws GuzzleException
      */
-    private function request(string $path, string $method, array $headers, $body = NULL): ResponseInterface
+    private function request(string $path, string $method, array $headers, string $body = null): ResponseInterface
     {
-        $client = new \GuzzleHttp\Client();
+        $options =
+            [
+                'headers' => $headers,
+                'body'    => $body,
+            ];
 
-        $options = [
-            'headers' => $headers,
-            'body' => $body,
-        ];
+        $path = '/' . ltrim($path, '/');
 
-        return $client->request($method, $this->host . $path, array_merge(
-            $options,
-            (array)$this->httpClientOptions
-        ));
+        return $this->getHttpClient()->request($method, $path, $options);
     }
+
+//    private function request(string $path, string $method, array $headers, $body = NULL): ResponseInterface
+//    {
+//        $client = new \GuzzleHttp\Client();
+//
+//        $options = [
+//            'headers' => $headers,
+//            'body' => $body,
+//        ];
+//
+//        return $client->request($method, $this->host . $path, array_merge(
+//            $options,
+//            (array)$this->httpClientOptions
+//        ));
+//    }
 
     /**
      * selectDB
