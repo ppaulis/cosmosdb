@@ -46,10 +46,9 @@ class CosmosDb
 
             $this->httpClient = new Client(array_merge([
                 'base_uri'        => $baseUri,
-                'http_errors'     => true,     // keep current behavior (exceptions on 4xx/5xx)
-//                'timeout'         => 30.0,     // total request timeout
-                'connect_timeout' => 5.0,      // fail fast on connect issues
-                // 'headers' => ['Connection' => 'keep-alive'], // optional; HTTP/1.1 defaults to keep-alive
+                'http_errors'     => true,
+                'timeout'         => 30.0,
+                'connect_timeout' => 5.0,
             ], $this->httpClientOptions));
         }
 
@@ -117,21 +116,6 @@ class CosmosDb
 
         return $this->getHttpClient()->request($method, $path, $options);
     }
-
-//    private function request(string $path, string $method, array $headers, $body = NULL): ResponseInterface
-//    {
-//        $client = new \GuzzleHttp\Client();
-//
-//        $options = [
-//            'headers' => $headers,
-//            'body' => $body,
-//        ];
-//
-//        return $client->request($method, $this->host . $path, array_merge(
-//            $options,
-//            (array)$this->httpClientOptions
-//        ));
-//    }
 
     /**
      * selectDB
